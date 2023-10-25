@@ -1,72 +1,61 @@
 package com.example.meepmeeptesting;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
+import com.acmerobotics.roadrunner.geometry.Vector2d;
+import com.acmerobotics.roadrunner.trajectory.Trajectory;
 import com.noahbres.meepmeep.MeepMeep;
 import com.noahbres.meepmeep.roadrunner.DefaultBotBuilder;
+import com.noahbres.meepmeep.roadrunner.SampleMecanumDrive;
 import com.noahbres.meepmeep.roadrunner.entity.RoadRunnerBotEntity;
+
+import java.awt.Image;
+import java.io.File;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
 
 public class MeepMeepTesting {
     public static void main(String[] args) {
-        MeepMeep meepMeep = new MeepMeep(800);
-
-
-        int parkNum = 1 + (int)(Math.random() * ((3-1) + 1));
-        System.out.println(parkNum);
-        Pose2d vectorPark = new Pose2d(0, 0);
-
-        switch (parkNum) {
-            case 1:
-                vectorPark = new Pose2d(-57.5, 12, Math.toRadians(180));
-                break;
-            case 2:
-                vectorPark = new Pose2d(-35, 12, Math.toRadians(180));
-                break;
-            case 3:
-                vectorPark = new Pose2d(-12, 12, Math.toRadians(180));
-                break;
-
-        }
-
-        Pose2d finalVectorPark = vectorPark;
+        MeepMeep meepMeep = new MeepMeep(700);
 
         RoadRunnerBotEntity myBot = new DefaultBotBuilder(meepMeep)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
-                .setConstraints(26.01, 30, 2.1322221755981445, Math.toRadians(180), 14.65)
-                .setDimensions(16, 17)
+                .setConstraints(49, 49, (49.0/16.5)*0.80, Math.toRadians(180), 14.65)
+                .setDimensions(17.75, 17.875)
                 .followTrajectorySequence(drive ->
-                        drive.trajectorySequenceBuilder(new Pose2d(-35.5, 62.3, Math.toRadians(0)))
+                        drive.trajectorySequenceBuilder(new Pose2d(-70, 10, Math.toRadians(0)))
 
-                                // preload cone
-                                /*
-                                .UNSTABLE_addTemporalMarkerOffset(0, () -> verticalServo.setPosition(1))
-                                .UNSTABLE_addTemporalMarkerOffset(3, () -> servoScissor.setPosition(0.67))
-                    `           .UNSTABLE_addTemporalMarkerOffset(6, () -> verticalServo.setPosition(0))
-                                 */
-                                .UNSTABLE_addTemporalMarkerOffset(0, () -> {})
-                                .UNSTABLE_addTemporalMarkerOffset(3, () -> {})
-                                .UNSTABLE_addTemporalMarkerOffset(6, () -> {})
-                                .waitSeconds(6)
+                                .splineToConstantHeading(new Vector2d(-37, 22), Math.toRadians(0)) //change to a lower value
+                                .addDisplacementMarker(() -> {
+                                    //drop the pixel
+                                })
+                                .lineToLinearHeading(new Pose2d(-41.25, 22, Math.toRadians(90))) //back up and face the left AprilTag
 
-                                .lineToSplineHeading(new Pose2d(-11.5, 62.3, Math.toRadians(0)))
-                                .lineToSplineHeading(new Pose2d(-11.5, 11.5, Math.toRadians(0)))
-                                .turn(Math.toRadians(-135))
-                                .UNSTABLE_addTemporalMarkerOffset(0, () -> {}) //moving lift, power = 0.8, encoderticks = 3300
-                                .waitSeconds(1)
-                                .forward(7.25)
-                                .UNSTABLE_addTemporalMarkerOffset(0, () -> {}) //moving vertical servo, position is set to 0 (servo has been lifted up_
-                                .UNSTABLE_addTemporalMarkerOffset(0.5, () -> {}) //moving servo scissor to 0.5 (servo scissor/claw has opened to drop the cone into the junction stick)
-                                .waitSeconds(1)
-                                .back(7.25)
-                                .turn(Math.toRadians(-45))
-
-                                .UNSTABLE_addTemporalMarkerOffset(0, () -> {}) //move lift back to original position
-                                .waitSeconds(1)
-                                // park
-                                .lineToSplineHeading((finalVectorPark))
+                                //Using headings this way will ensure that the camera sees the left aprilTag first
+                                .lineToConstantHeading(new Vector2d(-41.25, 42.5))
+                                .lineToConstantHeading(new Vector2d(-41.25, 50.5),
+                                        SampleMecanumDrive.getVelocityConstraint(8, 49, 14.65),
+                                        SampleMecanumDrive.getAccelerationConstraint(49)
+                                        )
+                                .addDisplacementMarker(() -> {
+                                    //drop into the backdrop
+                                })
+                                .lineToConstantHeading(new Vector2d(-41.25, 48))
+                                .lineToLinearHeading(new Pose2d(-10, 48, Math.toRadians(180)))
+                                .lineToLinearHeading(new Pose2d(-10, 70, Math.toRadians(270)))
                                 .build()
                 );
 
-        meepMeep.setBackground(MeepMeep.Background.FIELD_POWERPLAY_OFFICIAL)
+        Image img = null;
+        try {
+            img = ImageIO.read(new File("C:\\Users\\kaden\\StudioProjects\\19446-Centerstage-RoadRunner\\MeepMeepTesting\\src\\main\\java\\com\\example\\meepmeeptesting\\field-2023-official.png"));
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        meepMeep.setBackground(img)
+//  <following code you were using previously>
                 .setDarkMode(true)
                 .setBackgroundAlpha(0.95f)
                 .addEntity(myBot)
